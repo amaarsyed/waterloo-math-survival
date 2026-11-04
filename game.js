@@ -7,7 +7,7 @@ function read(key){try{return localStorage.getItem(key)}catch{return null}}
 function save(key,value){try{localStorage.setItem(key,value);return true}catch{return false}}
 function toast(s){document.querySelector('#toast').textContent=s;setTimeout(()=>document.querySelector('#toast').textContent='',3500)}
 async function api(data){const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);try{const res=await fetch(API+(data?'':'?code='+encodeURIComponent(code)+'&participant='+encodeURIComponent(participant)),{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json'}:{},body:data?JSON.stringify(data):undefined,signal:controller.signal,cache:'no-store'});let body;try{body=await res.json()}catch{throw Error('The class service is temporarily unavailable. Please retry.')}if(!res.ok)throw Error(body.error||'Could not connect to the class.');return body;}catch(e){if(e.name==='AbortError')throw Error('The connection timed out. Your answers are safe here—please retry.');throw e;}finally{clearTimeout(timeout)}}
-function joinLink(){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('room',code);url.searchParams.set('v','8');return url.href}
+function joinLink(){const url=new URL(location.href);url.search='';url.hash='';url.searchParams.set('room',code);url.searchParams.set('v','9');return url.href}
 function showError(){return error?`<p class="class-error" role="alert">${esc(error)}</p>`:''}
 function render(){
  if(view==='loading'){game.innerHTML='<section class="class-center"><p class="eyebrow">COMMST 223</p><h1>Connecting<br>the class…</h1></section>';return}
@@ -26,7 +26,7 @@ function startPoll(){clearInterval(poll);poll=setInterval(()=>{if(!busy&&documen
 async function enter(roomCode,asHost=false){busy=true;error='';code=roomCode.trim().toUpperCase();if(!/^[A-Z2-9]{6}$/.test(code)){error='Enter the six-character code shown by your host.';busy=false;view='home';render();return}view='loading';render();try{
  participant=read('math-player-'+code)||crypto.randomUUID();if(!save('math-player-'+code,participant))throw Error('Enable browser storage so your quiz is counted only once, then rejoin.');
  host=asHost?read('math-host-'+code)||'':'';if(asHost&&!host)throw Error('Host controls are on the browser that created this session. You can join as a student here.');
- room=await api();const next=new URL(location.href);next.search='';next.searchParams.set('room',code);if(host)next.searchParams.set('host','1');next.searchParams.set('v','8');history.replaceState({},'',next);
+ room=await api();const next=new URL(location.href);next.search='';next.searchParams.set('room',code);if(host)next.searchParams.set('host','1');next.searchParams.set('v','9');history.replaceState({},'',next);
  let saved;try{saved=JSON.parse(read('math-answers-'+code)||'[]')}catch{saved=[]}choices=Array.isArray(saved)?saved.slice(0,10).map(x=>x==='A'||x==='B'?x:null):[];
  if(host)view='host';else if(room.submitted)view='submitted';else{round=choices.findIndex(x=>!x);if(round<0)round=Math.min(choices.length,9);pick=choices[round]||'';view='quiz'}
  busy=false;render();startPoll();
@@ -39,6 +39,6 @@ function advance(){if(view!=='quiz'||!pick)return;if(round===9){view='submit';re
 game.addEventListener('submit',e=>{if(e.target.id==='join-form'){e.preventDefault();enter(new FormData(e.target).get('code'))}});
 game.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.pick)choose(b.dataset.pick);switch(b.dataset.action){case 'create':create();break;case 'next':advance();break;case 'back':if(round>0){round--;pick=choices[round]||'';render()}break;case 'review':round=0;pick=choices[0];view='quiz';render();break;case 'submit':submit();break;case 'reveal':reveal();break;case 'copy':try{await navigator.clipboard.writeText(joinLink());toast('Student link copied!')}catch{toast('Copy the student URL shown below the class code.')}break}});
 document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||e.repeat||view!=='quiz')return;if(['a','b'].includes(e.key.toLowerCase())){e.preventDefault();choose(e.key.toUpperCase())}if(e.key==='Enter'&&pick){e.preventDefault();advance()}});
-document.querySelector('#home').onclick=()=>{if(view==='quiz'&&!confirm('Return to the class entry screen? Your answers are saved on this browser.'))return;clearInterval(poll);view='home';busy=false;error='';history.replaceState({},'',location.pathname+'?v=8');render()};
+document.querySelector('#home').onclick=()=>{if(view==='quiz'&&!confirm('Return to the class entry screen? Your answers are saved on this browser.'))return;clearInterval(poll);view='home';busy=false;error='';history.replaceState({},'',location.pathname+'?v=9');render()};
 document.querySelector('#fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('Use your browser’s fullscreen option.')}};
 if(params.get('room'))enter(params.get('room'),params.get('host')==='1');else{view='home';render()}
